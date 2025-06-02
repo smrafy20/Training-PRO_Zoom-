@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin - Zoom Meeting Creator{% endblock %}
+
+{% block head_styles %}
+    <style>
+        /* Styles specific to index.html */
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+        .btn-primary {
+            background-color: #2D8CFF;
+            border-color: #2D8CFF;
+        }
+        .btn-primary:hover {
+            background-color: #246BCC;
+            border-color: #246BCC;
+        }
+        .meeting-id, .password {
+            font-family: monospace;
+            font-weight: 500;
+        }
+        .copy-btn {
+            cursor: pointer;
+            color: #2D8CFF;
+            background: none;
+            border: none;
+            padding: 0;
+            margin-left: 5px;
+            position: relative; /* Needed for tooltip positioning */
+        }
+        .copy-btn:hover {
+            color: #246BCC;
+        }
+        .tooltip {
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+            /* Position tooltip above the button */
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 5px;
+            white-space: nowrap;
+        }
+        /* Compact table styles */
+        .table {
+            font-size: 0.85rem;
+            margin-bottom: 0;
+        }
+        .table td, .table th {
+            padding: 0.5rem; /* Smaller padding */
+            vertical-align: middle;
+        }
+        h1 {
+            font-size: 1.8rem; /* Smaller heading */
+            margin-bottom: 0.75rem;
+        }
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        h3 {
+            font-size: 1.25rem;
+        }
+        .card-body {
+            padding: 1rem; /* Reduced padding */
+        }
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        .meeting-option {
+             padding: 15px;
+             border: 1px solid #dee2e6;
+             border-radius: 10px;
+             margin-bottom: 15px;
+             transition: all 0.3s ease;
+         }
+        .meeting-option:hover {
+             transform: translateY(-3px);
+             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+         }
+        .option-icon {
+             font-size: 2rem;
+             margin-bottom: 10px;
+             color: #2D8CFF;
+         }
+         #loading {
+             display: none;
+             margin-top: 15px;
+         }
+         .spinner-border {
+             width: 2rem;
+             height: 2rem;
+         }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- Main content for the Admin page -->
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <!-- The logo is now in the base.html navbar -->
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="card-title">Zoom Meeting Creator</h1>
+
+                    <!-- Credentials Status Section -->
+                    <div class="alert {% if session.get('credentials_set') %}alert-success{% else %}alert-warning{% endif %} mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas {% if session.get('credentials_set') %}fa-check-circle{% else %}fa-exclamation-triangle{% endif %} me-2"></i>
+                                {% if session.get('credentials_set') %}
+                                    <strong>Zoom Credentials:</strong> Configured and ready
+                                    <small class="d-block text-muted">Client ID: {{ session.get('zoom_client_id', '')[:8] }}...</small>
+                                {% else %}
+                                    <strong>Setup Required:</strong> Please configure your Zoom API credentials to create meetings
+                                {% endif %}
+                            </div>
+                            <div>
+                                <a href="{{ url_for('credentials_form') }}" class="btn btn-sm {% if session.get('credentials_set') %}btn-outline-primary{% else %}btn-primary{% endif %} me-2">
+                                    <i class="fas {% if session.get('credentials_set') %}fa-edit{% else %}fa-plus{% endif %} me-1"></i>
+                                    {% if session.get('credentials_set') %}Update{% else %}Setup{% endif %} Credentials
+                                </a>
+                                {% if session.get('credentials_set') %}
+                                <a href="{{ url_for('clear_credentials') }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to clear your Zoom credentials? This will log you out.')">
+                                    <i class="fas fa-trash me-1"></i>
+                                    Clear
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="card-text mb-3">Select the type of meeting you want to create:</p>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="meeting-option">
+                                <div class="option-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-lightning-fill" viewBox="0 0 16 16">
+                                        <path d="M5.52.359A.5.5 0 0 1 6 0h4a.5.5 0 0 1 .474.658L8.694 6H12.5a.5.5 0 0 1 .395.807l-7 9a.5.5 0 0 1-.873-.454L6.823 9.5H3.5a.5.5 0 0 1-.48-.641l2.5-8.5z"/>
+                                    </svg>
+                                </div>
+                                <h3>Instant Meeting</h3>
+                                <p class="small mb-2">Create a meeting that starts right away</p>
+                                <!-- Updated link to use url_for for login -->
+                                <a href="{{ url_for('login', type='instant') }}" class="btn btn-primary btn-sm" id="instant-btn">Create Instant Meeting</a>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="meeting-option">
+                                <div class="option-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-calendar-date" viewBox="0 0 16 16">
+                                        <path d="M6.445 11.688V6.354h-.633A12.6 12.6 0 0 0 4.5 7.16v.695c.375-.257.969-.62 1.258-.777h.012v4.61h.675zm1.188-1.305c.047.64.594 1.406 1.703 1.406 1.258 0 2-1.066 2-2.871 0-1.934-.781-2.668-1.953-2.668-.926 0-1.797.672-1.797 1.809 0 1.16.824 1.77 1.676 1.77.746 0 1.23-.376 1.383-.79h.027c-.004 1.316-.461 2.164-1.305 2.164-.664 0-1.008-.45-1.05-.82h-.684zm2.953-2.317c0 .696-.559 1.18-1.184 1.18-.601 0-1.144-.383-1.144-1.2 0-.823.582-1.21 1.168-1.21.633 0 1.16.398 1.16 1.23z"/>
+                                        <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                                    </svg>
+                                </div>
+                                <h3>Schedule Meeting</h3>
+                                <p class="small mb-2">Plan a meeting for a future date and time</p>
+                                <!-- Updated link to use url_for for login -->
+                                <a href="{{ url_for('login', type='scheduled') }}" class="btn btn-outline-primary btn-sm" id="schedule-btn">Schedule a Meeting</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="loading" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Connecting to Zoom...</p>
+                    </div>
+                </div>
+            </div>
+            <p class="text-muted small mt-2 mb-2">This application creates meetings on your Zoom account.</p>
+        </div>
+    </div>
+
+    <!-- Meeting Management Table -->
+    <div class="card mt-4"> <!-- Added mt-4 for spacing -->
+        <div class="card-body">
+            <h2 class="card-title">Meeting Management</h2>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                     <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Topic</th>
+                            <th>Time</th>
+                            <th>Duration</th>
+                            <th>Meeting ID</th>
+                            <th>Password</th>
+                            <th>Actions</th>
+                            <th>Report</th> <!-- New Column Header -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if meetings %}
+                            {% for meeting in meetings %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if meeting.meeting_type == 'Instant' else 'info' }}">
+                                            {{ meeting.meeting_type }}
+                                        </span>
+                                    </td>
+                                    <td>{{ meeting.topic or "My Meeting" }}</td>
+                                    <td>
+                                        {% if meeting.meeting_type == 'Instant' %}
+                                            Now
+                                        {% else %}
+                                            {{ meeting.start_time }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ meeting.duration }} min</td>
+                                    <td class="position-relative">
+                                        <span class="meeting-id">{{ meeting.meeting_id }}</span>
+                                        <button class="copy-btn" onclick="copyToClipboard('{{ meeting.meeting_id }}', this)">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                            </svg>
+                                        </button>
+                                    </td>
+                                    <td class="position-relative">
+                                        <span class="password">{{ meeting.password|default('N/A') }}</span>
+                                        {% if meeting.password %}
+                                        <button class="copy-btn" onclick="copyToClipboard('{{ meeting.password }}', this)">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                            </svg>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ meeting.start_url }}" target="_blank" class="btn btn-primary btn-sm">Start</a>
+                                            <a href="{{ meeting.join_url }}" target="_blank" class="btn btn-outline-primary btn-sm">Join</a>
+                                        </div>
+                                    </td>
+                                    <td> <!-- New Column Data -->
+                                        <a href="{{ url_for('download_report', meeting_id=meeting.meeting_id) }}" class="btn btn-secondary btn-sm" title="Download Attendance Report">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                                              <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                              <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center py-3">
+                                    <em class="text-muted small">No meetings created yet. Use the options above to create an instant meeting or schedule one.</em>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <!-- Scripts specific to index.html -->
+    <script>
+        document.querySelectorAll('#instant-btn, #schedule-btn').forEach(button => {
+            button.addEventListener('click', function(event) {
+                // Check if the link is for login before showing loading
+                const href = this.getAttribute('href');
+                if (href && href.startsWith('{{ url_for("login") }}')) {
+                     // Prevent default navigation temporarily if needed,
+                     // but usually just showing loading is fine.
+                    document.getElementById('loading').style.display = 'block';
+                }
+                // Allow default navigation to proceed
+            });
+        });
+
+        // Function to copy text to clipboard
+        function copyToClipboard(text, button) {
+            if (!text) return; // Don't try to copy empty text
+            navigator.clipboard.writeText(text).then(function() {
+                // Create and show tooltip
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.textContent = 'Copied!';
+                button.appendChild(tooltip); // Append to button
+
+                // Show tooltip
+                setTimeout(() => { tooltip.style.opacity = "1"; }, 10);
+
+                // Hide and remove tooltip
+                setTimeout(() => {
+                    tooltip.style.opacity = "0";
+                    setTimeout(() => {
+                        // Check if tooltip still exists before removing
+                        if (button.contains(tooltip)) {
+                            button.removeChild(tooltip);
+                        }
+                    }, 300); // Wait for fade out
+                }, 1500); // Tooltip visible duration
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                // Optionally show an error tooltip or alert
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.textContent = 'Error!';
+                tooltip.style.backgroundColor = '#dc3545'; // Red for error
+                button.appendChild(tooltip);
+                setTimeout(() => { tooltip.style.opacity = "1"; }, 10);
+                setTimeout(() => {
+                    tooltip.style.opacity = "0";
+                    setTimeout(() => { if (button.contains(tooltip)) button.removeChild(tooltip); }, 300);
+                }, 2000);
+            });
+        }
+    </script>
+{% endblock %}

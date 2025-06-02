@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Schedule Zoom Meeting{% endblock %}
+
+{% block head_styles %}
+    <style>
+        /* Styles specific to schedule_form.html */
+        /* body padding-top is handled by base.html */
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #2D8CFF;
+            border-color: #2D8CFF;
+        }
+        .btn-primary:hover {
+            background-color: #246BCC;
+            border-color: #246BCC;
+        }
+        .zoom-logo {
+            width: 120px;
+            margin-bottom: 20px;
+        }
+        #loading {
+            display: none; /* Hide loading initially */
+            margin-top: 20px;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="text-center mb-4">
+                    <img src="/static/images/DS.png" alt="Zoom Logo" class="zoom-logo">
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <h1 class="card-title text-center mb-4">Schedule a Meeting</h1>
+                        <form action="/schedule-meeting" method="post" id="schedule-form">
+                            <div class="mb-3">
+                                <label for="topic" class="form-label">Meeting Topic</label>
+                                <input type="text" class="form-control" id="topic" name="topic" placeholder="E.g..Training Pro" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="start_time" class="form-label">Start Time (Bangladesh Time - GMT+6)</label>
+                                <input type="datetime-local" class="form-control" id="start_time" name="start_time" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="duration" class="form-label">Duration (minutes)</label>
+                                <input type="number" class="form-control" id="duration" name="duration" value="40" min="15" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary" id="submit-btn">Schedule Meeting</button>
+                            </div>
+                        </form>
+                        <div id="loading" class="text-center mt-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Scheduling your meeting...</p>
+                        </div>
+                    </div>
+                </div>
+                 <p class="text-center text-muted mt-3"><a href="/">Back to options</a></p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        // Show loading indicator on form submission
+        document.getElementById('schedule-form').addEventListener('submit', function() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('submit-btn').disabled = true; // Disable button to prevent multiple submissions
+        });
+
+        // Set minimum start time to now
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); // Adjust for local timezone
+        const minDateTime = now.toISOString().slice(0, 16);
+        document.getElementById('start_time').min = minDateTime;
+    </script>
+{% endblock %}

@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ meeting_type }} Meeting Created{% endblock %}
+
+{% block head_styles %}
+    <style>
+        /* Styles specific to meeting.html */
+        /* body padding-top is handled by base.html */
+        .card {
+            max-width: 500px;
+            margin: 0 auto;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+        .card-title {
+            color: #0b8043;
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .btn-primary {
+            background-color: #2D8CFF;
+            border-color: #2D8CFF;
+            font-weight: bold;
+            padding: 10px 0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .btn-primary:hover {
+            background-color: #246BCC;
+            border-color: #246BCC;
+        }
+        .btn-outline-primary {
+            border-color: #2D8CFF;
+            color: #2D8CFF;
+            font-weight: bold;
+            padding: 10px 0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .btn-outline-primary:hover {
+            background-color: #2D8CFF;
+            color: white;
+        }
+        .meeting-info {
+            background-color: #f2f6fc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        .meeting-info strong {
+            color: #333;
+        }
+        .meeting-detail {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .meeting-label {
+            font-weight: 600;
+            color: #555;
+        }
+        .meeting-value {
+            font-family: monospace;
+            padding: 4px 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            position: relative;
+        }
+        .copy-btn {
+            cursor: pointer;
+            color: #2D8CFF;
+            background: none;
+            border: none;
+            padding: 0;
+            margin-left: 8px;
+        }
+        .copy-btn:hover {
+            color: #246BCC;
+        }
+        .tooltip {
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+        .schedule-info {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #666;
+        }
+        .back-link {
+            text-align: center;
+            display: block;
+            margin-top: 15px;
+            color: #6c757d;
+        }
+        .zoom-logo {
+            max-width: 100px;
+            margin-bottom: 20px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">{{ meeting_type }} Meeting Created!</h1>
+
+                <div class="text-center">
+                    <img src="/static/images/DS.png" alt="Company Logo" class="zoom-logo">
+                </div>
+
+                {% if meeting_type == 'Scheduled' %}
+                <div class="schedule-info">
+                    <p><strong>Topic:</strong> {{ topic }}</p>
+                    <p><strong>Time:</strong> {{ display_start_time }}</p>
+                    <p><strong>Duration:</strong> {{ duration }} minutes</p>
+                </div>
+                {% endif %}
+
+                <div class="meeting-info">
+                    <div class="meeting-detail">
+                        <span class="meeting-label">Meeting ID:</span>
+                        <div>
+                            <span class="meeting-value" id="meeting-id">{{ meeting_id }}</span>
+                            <button class="copy-btn" onclick="copyToClipboard('{{ meeting_id }}', this)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="meeting-detail">
+                        <span class="meeting-label">Password:</span>
+                        <div>
+                            <span class="meeting-value" id="meeting-password">{{ password|default('No password required') }}</span>
+                            {% if password %}
+                            <button class="copy-btn" onclick="copyToClipboard('{{ password }}', this)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                </svg>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <a href="{{ start_url }}" target="_blank" class="btn btn-primary w-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-video3 me-2" viewBox="0 0 16 16">
+                        <path d="M14 9.5a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm-6 5.7c0 .8.8.8.8.8h6.4s.8 0 .8-.8-.8-3.2-4-3.2-4 2.4-4 3.2Z"/>
+                        <path d="M2 2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h5.243c.122-.326.295-.668.526-1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v7.81c.353.23.656.496.91.783.059-.187.09-.386.09-.593V4a2 2 0 0 0-2-2H2Z"/>
+                    </svg>
+                    Start Meeting (Host)
+                </a>
+
+                <a href="{{ join_url }}" target="_blank" class="btn btn-primary w-100" style="background-color: #1a73e8; border-color: #1a73e8;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-camera-video-fill me-2" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2V5z"/>
+                    </svg>
+                    Join Meeting Now
+                </a>
+
+                <button onclick="copyToClipboard('{{ join_url }}', this)" class="btn btn-outline-primary w-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-link-45deg me-2" viewBox="0 0 16 16">
+                        <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
+                        <path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/>
+                    </svg>
+                    Copy Meeting Link
+                </button>
+
+                <a href="/admin" class="back-link mt-3">Create/Schedule Another Meeting</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(function() {
+                // Create and show tooltip
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.textContent = 'Copied!';
+
+                // Position the tooltip
+                button.appendChild(tooltip);
+
+                // Get button's position
+                const buttonRect = button.getBoundingClientRect();
+
+                // Position tooltip above the button
+                tooltip.style.top = '-25px';
+                tooltip.style.left = '50%';
+                tooltip.style.transform = 'translateX(-50%)';
+
+                // Show tooltip
+                setTimeout(() => {
+                    tooltip.style.opacity = '1';
+                }, 10);
+
+                // Hide and remove tooltip after 1.5 seconds
+                setTimeout(() => {
+                    tooltip.style.opacity = '0';
+                    setTimeout(() => {
+                        button.removeChild(tooltip);
+                    }, 300);
+                }, 1500);
+            }).catch(function(err) {
+                console.error('Could not copy text: ', err);
+            });
+        }
+    </script>
+{% endblock %}
