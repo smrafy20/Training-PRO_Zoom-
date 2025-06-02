@@ -38,7 +38,7 @@ python-dotenv==0.19.1
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/smrafy20/Integrate-zoom-with-website.git
+   git clone https://github.com/smrafy20/Training-PRO_Zoom-.git
    
    ```
 
